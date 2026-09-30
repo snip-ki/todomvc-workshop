@@ -1,10 +1,3 @@
-let uniqueID = 1;
-/* HOT MODULE SPECIFIC
- * Since hot reload blows away class instances, storage object is
- * moved outside of the class.
- */
-let memoryStorage = {};
-
 /**
  * Creates a new client side storage object and will create an empty
  * collection if no collection already exists.
@@ -17,15 +10,29 @@ export class Store {
   constructor(name, callback) {
     this._dbName = name;
 
-    if (!memoryStorage[name]) {
-      const data = {
-        todos: [],
-      };
+    const data = this._read();
+    this._write(data);
 
-      memoryStorage[name] = JSON.stringify(data);
+    if (callback) callback(data);
+  }
+
+  /**
+   * Reads the collection from localStorage, falling back to an empty one
+   * when nothing is stored or the stored value is unreadable
+   */
+  _read() {
+    try {
+      const data = JSON.parse(localStorage.getItem(this._dbName));
+      if (data && Array.isArray(data.todos)) return data;
+    } catch {
+      // Corrupt data: fall through and start fresh
     }
 
-    if (callback) callback(JSON.parse(memoryStorage[name]));
+    return { todos: [] };
+  }
+
+  _write(data) {
+    localStorage.setItem(this._dbName, JSON.stringify(data));
   }
 
   /**
@@ -44,7 +51,7 @@ export class Store {
   find(query, callback) {
     if (!callback) return;
 
-    const { todos } = JSON.parse(memoryStorage[this._dbName]);
+    const { todos } = this._read();
 
     callback(
       todos.filter((todo) => {
@@ -65,7 +72,7 @@ export class Store {
   findAll(callback) {
     if (!callback) return;
 
-    callback(JSON.parse(memoryStorage[this._dbName]).todos);
+    callback(this._read().todos);
   }
 
   /**
@@ -77,7 +84,7 @@ export class Store {
    * @param {number} id An optional param to enter an ID of an item to update
    */
   save(updateData, callback, id) {
-    const data = JSON.parse(memoryStorage[this._dbName]);
+    const data = this._read();
     const { todos } = data;
 
     // If an ID was actually given, find the item and update each property
@@ -90,15 +97,15 @@ export class Store {
         }
       }
 
-      memoryStorage[this._dbName] = JSON.stringify(data);
+      this._write(data);
 
-      if (callback) callback(JSON.parse(memoryStorage[this._dbName]).todos);
+      if (callback) callback(todos);
     } else {
-      // Generate an ID
-      updateData.id = uniqueID++;
+      // Generate an ID from the stored todos so it stays unique across reloads
+      updateData.id = todos.reduce((max, todo) => Math.max(max, todo.id), 0) + 1;
 
       todos.push(updateData);
-      memoryStorage[this._dbName] = JSON.stringify(data);
+      this._write(data);
 
       if (callback) callback([updateData]);
     }
@@ -111,7 +118,7 @@ export class Store {
    * @param {function} callback The callback to fire after saving
    */
   remove(id, callback) {
-    const data = JSON.parse(memoryStorage[this._dbName]);
+    const data = this._read();
     const { todos } = data;
 
     for (let i = 0; i < todos.length; i++) {
@@ -121,9 +128,9 @@ export class Store {
       }
     }
 
-    memoryStorage[this._dbName] = JSON.stringify(data);
+    this._write(data);
 
-    if (callback) callback(JSON.parse(memoryStorage[this._dbName]).todos);
+    if (callback) callback(todos);
   }
 
   /**
@@ -132,9 +139,9 @@ export class Store {
    * @param {function} callback The callback to fire after dropping the data
    */
   drop(callback) {
-    memoryStorage[this._dbName] = JSON.stringify({ todos: [] });
+    this._write({ todos: [] });
 
-    if (callback) callback(JSON.parse(memoryStorage[this._dbName]).todos);
+    if (callback) callback([]);
   }
 }
 
