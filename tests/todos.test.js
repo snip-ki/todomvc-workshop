@@ -6,6 +6,7 @@ let store;
 let model;
 
 beforeEach(async () => {
+  localStorage.clear();
   vi.resetModules();
   ({ default: Store } = await import("../src/store.js"));
   ({ default: Model } = await import("../src/model.js"));
@@ -29,6 +30,18 @@ describe("existing todo behavior", () => {
     expect(first).toEqual({ id: expect.any(Number), title: "First task", completed: false });
     expect(second).toEqual({ id: expect.any(Number), title: "Second task", completed: false });
     expect(first.id).not.toBe(second.id);
+  });
+
+  it("keeps todos when the store is recreated", () => {
+    const onCreate = vi.fn();
+    model.create("Persisted task", onCreate);
+    const createdTodo = onCreate.mock.calls[0][0][0];
+
+    const reloadedModel = new Model(new Store("test-todos"));
+    const onRead = vi.fn();
+    reloadedModel.read(onRead);
+
+    expect(onRead).toHaveBeenCalledExactlyOnceWith([createdTodo]);
   });
 
   it("edits and completes the requested item without changing its neighbor", () => {
