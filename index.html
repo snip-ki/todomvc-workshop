@@ -10,6 +10,10 @@
     <section class="todoapp">
       <header class="header">
         <h1>todos</h1>
+        <div class="history-controls">
+          <button class="undo" type="button" disabled aria-label="Undo">Undo</button>
+          <button class="redo" type="button" disabled aria-label="Redo">Redo</button>
+        </div>
         <input
           class="new-todo"
           placeholder="What needs to be done?"
@@ -36,6 +40,7 @@
     </section>
     <footer class="info">
       <p>Double-click to edit a todo</p>
+      <p>Undo / Redo: buttons or ⌘Z / ⌘⇧Z (Ctrl on Windows)</p>
       <p>Workshop starting point: todos reset when you reload.</p>
       <p>Based on <a href="https://todomvc.com">TodoMVC</a> by the TodoMVC Team.</p>
     </footer>

@@ -82,6 +82,8 @@ export default class View {
     this.$toggleAllInput = qs(".toggle-all");
     this.$toggleAll = qs(".toggle-all-label");
     this.$newTodo = qs(".new-todo");
+    this.$undo = qs(".undo");
+    this.$redo = qs(".redo");
 
     this.render = this.render.bind(this);
     this.bindCallback = this.bindCallback.bind(this);
@@ -90,6 +92,11 @@ export default class View {
   _clearCompletedButton(completedCount, visible) {
     this.$clearCompleted.innerHTML = this.template.clearCompletedButton(completedCount);
     this.$clearCompleted.style.display = visible ? "block" : "none";
+  }
+
+  _historyControls(canUndo, canRedo) {
+    this.$undo.disabled = !canUndo;
+    this.$redo.disabled = !canRedo;
   }
 
   // eslint-disable-next-line complexity
@@ -134,6 +141,9 @@ export default class View {
           this.clearCompletedButton,
         );
         break;
+      case "historyControls":
+        this._historyControls(parameter.canUndo, parameter.canRedo);
+        break;
     }
   }
 
@@ -146,6 +156,33 @@ export default class View {
         break;
       case "removeCompleted":
         $on(this.$clearCompleted, "click", handler);
+        break;
+      case "undo":
+        $on(this.$undo, "click", handler);
+        $on(document, "keydown", (event) => {
+          if (
+            !(event.metaKey || event.ctrlKey) ||
+            event.key.toLowerCase() !== "z" ||
+            event.shiftKey
+          )
+            return;
+          if (event.target.classList?.contains("edit")) return;
+          event.preventDefault();
+          handler();
+        });
+        break;
+      case "redo":
+        $on(this.$redo, "click", handler);
+        $on(document, "keydown", (event) => {
+          const isRedoKey =
+            (event.metaKey || event.ctrlKey) &&
+            ((event.key.toLowerCase() === "z" && event.shiftKey) ||
+              event.key.toLowerCase() === "y");
+          if (!isRedoKey) return;
+          if (event.target.classList?.contains("edit")) return;
+          event.preventDefault();
+          handler();
+        });
         break;
       case "toggleAll":
         $on(this.$toggleAll, "click", () => {

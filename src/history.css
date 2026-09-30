@@ -1,0 +1,30 @@
+.history-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 15px 0;
+}
+
+.history-controls button {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: inherit;
+  line-height: 1.4;
+  color: #777;
+  background: #f5f5f5;
+  border: 1px solid #e6e6e6;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.history-controls button:hover:not(:disabled) {
+  color: #4d4d4d;
+  border-color: #ccc;
+}
+
+.history-controls button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

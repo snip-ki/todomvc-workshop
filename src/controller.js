@@ -16,6 +16,8 @@ class Controller {
     this.view.bindCallback("itemToggle", (item) => this.toggleComplete(item.id, item.completed));
     this.view.bindCallback("removeCompleted", () => this.removeCompletedItems());
     this.view.bindCallback("toggleAll", (status) => this.toggleAll(status.completed));
+    this.view.bindCallback("undo", () => this.undo());
+    this.view.bindCallback("redo", () => this.redo());
   }
 
   /**
@@ -147,6 +149,32 @@ class Controller {
   }
 
   /**
+   * Restores the previous todos state, if available.
+   */
+  undo() {
+    if (!this.model.undo(() => this._filter(true))) return;
+    this._updateHistoryControls();
+  }
+
+  /**
+   * Reapplies the next todos state after an undo, if available.
+   */
+  redo() {
+    if (!this.model.redo(() => this._filter(true))) return;
+    this._updateHistoryControls();
+  }
+
+  /**
+   * Syncs undo/redo button availability with the history stacks.
+   */
+  _updateHistoryControls() {
+    this.view.render("historyControls", {
+      canUndo: this.model.canUndo(),
+      canRedo: this.model.canRedo(),
+    });
+  }
+
+  /**
    * Updates the pieces of the page which change depending on the remaining
    * number of todos.
    */
@@ -160,6 +188,7 @@ class Controller {
       this.view.render("clearCompletedButton", { completed, visible });
       this.view.render("toggleAll", { checked });
       this.view.render("contentBlockVisibility", { visible: todos.total > 0 });
+      this._updateHistoryControls();
     });
   }
 

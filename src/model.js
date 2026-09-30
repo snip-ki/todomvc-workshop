@@ -108,6 +108,34 @@ class Model {
       callback(stats);
     });
   }
+
+  /**
+   * Undoes the last mutating change, if any.
+   *
+   * @param {function} callback The callback to fire with restored todos or null
+   * @returns {boolean} Whether an undo was performed
+   */
+  undo(callback) {
+    return this.storage.undo(callback);
+  }
+
+  /**
+   * Redoes the last undone change, if any.
+   *
+   * @param {function} callback The callback to fire with restored todos or null
+   * @returns {boolean} Whether a redo was performed
+   */
+  redo(callback) {
+    return this.storage.redo(callback);
+  }
+
+  canUndo() {
+    return this.storage.canUndo();
+  }
+
+  canRedo() {
+    return this.storage.canRedo();
+  }
 }
 
 export default Model;

@@ -6,6 +6,7 @@ import Template from "./template";
 
 import "todomvc-app-css/index.css";
 import "todomvc-common/base.css";
+import "./history.css";
 
 let todo;
 const onHashChange = () => {
