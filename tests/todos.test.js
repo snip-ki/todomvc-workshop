@@ -5,7 +5,16 @@ let Model;
 let store;
 let model;
 
+const reload = async () => {
+  vi.resetModules();
+  ({ default: Store } = await import("../src/store.js"));
+  ({ default: Model } = await import("../src/model.js"));
+  store = new Store("test-todos");
+  model = new Model(store);
+};
+
 beforeEach(async () => {
+  localStorage.clear();
   vi.resetModules();
   ({ default: Store } = await import("../src/store.js"));
   ({ default: Model } = await import("../src/model.js"));
@@ -69,5 +78,42 @@ describe("existing todo behavior", () => {
     expect(onRead).toHaveBeenCalledExactlyOnceWith([
       { id: expect.any(Number), title: "Keep me", completed: false },
     ]);
+  });
+});
+
+describe("persistence", () => {
+  it("persists todos across a reload", async () => {
+    const onCreate = vi.fn();
+    model.create("First", onCreate);
+    model.create("Second");
+    const id = onCreate.mock.calls[0][0][0].id;
+    model.update(id, { completed: true });
+    const before = vi.fn();
+    model.read(before);
+
+    await reload();
+
+    const after = vi.fn();
+    model.read(after);
+    expect(after.mock.calls[0][0]).toEqual(before.mock.calls[0][0]);
+    expect(after.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it("keeps IDs unique after a reload", async () => {
+    model.create("Before reload");
+    await reload();
+    model.create("After reload");
+    const onRead = vi.fn();
+    model.read(onRead);
+    const [first, second] = onRead.mock.calls[0][0];
+    expect(first.id).not.toBe(second.id);
+  });
+
+  it("recovers from corrupt stored data", async () => {
+    localStorage.setItem("test-todos", "not json");
+    await reload();
+    const onRead = vi.fn();
+    model.read(onRead);
+    expect(onRead).toHaveBeenCalledExactlyOnceWith([]);
   });
 });
