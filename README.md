@@ -2,7 +2,7 @@
 
 A small, plain JavaScript app for practicing how to investigate code, write a short spec or plan, implement a change with an agent, and review a pull request.
 
-The starter can add, edit, complete, filter, and delete todos. **Data lives in browser memory and disappears on reload.** There is no application backend in this starter.
+The starter can add, edit, complete, filter, and delete todos. **Data is saved in the browser's `localStorage` and survives reloads.** There is no application backend in this starter.
 
 ## Setup
 
@@ -17,7 +17,7 @@ npm run dev
 
 Open **http://127.0.0.1:5173**. No Docker, environment file, API key, global Vite+ CLI, or database setup is needed.
 
-Before the workshop, add a todo, confirm it disappears on reload, and run `npm run verify`. Check that your agent can read the repo and run commands. If it has browser tools, check that it can open the app too. Wait for the facilitator to hand out the session task.
+Before the workshop, add a todo, confirm it is still there after a reload, and run `npm run verify`. Check that your agent can read the repo and run commands. If it has browser tools, check that it can open the app too. Wait for the facilitator to hand out the session task.
 
 ## Commands
 
@@ -35,7 +35,7 @@ Use npm and keep `package-lock.json`. If port 5173 is busy, run `npm run dev -- 
 - `src/app.js`: connects the app.
 - `src/controller.js`: user actions and rendering.
 - `src/model.js`: todo operations and counts.
-- `src/store.js`: in-memory storage.
+- `src/store.js`: `localStorage` storage with an in-memory fallback.
 - `src/view.js`, `src/template.js`, `src/helpers.js`: DOM, markup, and events.
 - `tests/todos.test.js`: baseline behavior checks.
 

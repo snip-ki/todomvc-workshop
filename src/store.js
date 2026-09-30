@@ -1,13 +1,45 @@
-let uniqueID = 1;
-/* HOT MODULE SPECIFIC
- * Since hot reload blows away class instances, storage object is
- * moved outside of the class.
+/* Fallback used only when localStorage is unavailable or a write fails
+ * (private mode, quota exceeded, disabled storage). Holds the serialized
+ * collection so the current session keeps working. localStorage itself
+ * survives hot reload, so nothing else needs to live outside the class.
  */
-let memoryStorage = {};
+const memoryStorage = {};
+
+function read(name) {
+  let json = memoryStorage[name];
+
+  if (json === undefined) {
+    try {
+      json = localStorage.getItem(name);
+    } catch {
+      return { todos: [] };
+    }
+  }
+
+  try {
+    const data = JSON.parse(json);
+    if (data && Array.isArray(data.todos)) return data;
+  } catch {
+    // Missing or corrupt value: treat as empty.
+  }
+
+  return { todos: [] };
+}
+
+function write(name, data) {
+  const json = JSON.stringify(data);
+
+  try {
+    localStorage.setItem(name, json);
+    delete memoryStorage[name];
+  } catch {
+    memoryStorage[name] = json;
+  }
+}
 
 /**
- * Creates a new client side storage object and will create an empty
- * collection if no collection already exists.
+ * Creates a new client side storage object backed by localStorage. A missing,
+ * corrupt, or unavailable collection reads as empty.
  *
  * @param {string} name The name of our DB we want to use
  * @param {function} callback Our fake DB uses callbacks because in
@@ -17,15 +49,7 @@ export class Store {
   constructor(name, callback) {
     this._dbName = name;
 
-    if (!memoryStorage[name]) {
-      const data = {
-        todos: [],
-      };
-
-      memoryStorage[name] = JSON.stringify(data);
-    }
-
-    if (callback) callback(JSON.parse(memoryStorage[name]));
+    if (callback) callback(read(name));
   }
 
   /**
@@ -44,7 +68,7 @@ export class Store {
   find(query, callback) {
     if (!callback) return;
 
-    const { todos } = JSON.parse(memoryStorage[this._dbName]);
+    const { todos } = read(this._dbName);
 
     callback(
       todos.filter((todo) => {
@@ -65,7 +89,7 @@ export class Store {
   findAll(callback) {
     if (!callback) return;
 
-    callback(JSON.parse(memoryStorage[this._dbName]).todos);
+    callback(read(this._dbName).todos);
   }
 
   /**
@@ -77,7 +101,7 @@ export class Store {
    * @param {number} id An optional param to enter an ID of an item to update
    */
   save(updateData, callback, id) {
-    const data = JSON.parse(memoryStorage[this._dbName]);
+    const data = read(this._dbName);
     const { todos } = data;
 
     // If an ID was actually given, find the item and update each property
@@ -90,15 +114,15 @@ export class Store {
         }
       }
 
-      memoryStorage[this._dbName] = JSON.stringify(data);
+      write(this._dbName, data);
 
-      if (callback) callback(JSON.parse(memoryStorage[this._dbName]).todos);
+      if (callback) callback(todos);
     } else {
-      // Generate an ID
-      updateData.id = uniqueID++;
+      // Generate an ID that can't collide with items saved in earlier sessions
+      updateData.id = todos.reduce((max, todo) => Math.max(max, todo.id), 0) + 1;
 
       todos.push(updateData);
-      memoryStorage[this._dbName] = JSON.stringify(data);
+      write(this._dbName, data);
 
       if (callback) callback([updateData]);
     }
@@ -111,7 +135,7 @@ export class Store {
    * @param {function} callback The callback to fire after saving
    */
   remove(id, callback) {
-    const data = JSON.parse(memoryStorage[this._dbName]);
+    const data = read(this._dbName);
     const { todos } = data;
 
     for (let i = 0; i < todos.length; i++) {
@@ -121,9 +145,9 @@ export class Store {
       }
     }
 
-    memoryStorage[this._dbName] = JSON.stringify(data);
+    write(this._dbName, data);
 
-    if (callback) callback(JSON.parse(memoryStorage[this._dbName]).todos);
+    if (callback) callback(todos);
   }
 
   /**
@@ -132,9 +156,9 @@ export class Store {
    * @param {function} callback The callback to fire after dropping the data
    */
   drop(callback) {
-    memoryStorage[this._dbName] = JSON.stringify({ todos: [] });
+    write(this._dbName, { todos: [] });
 
-    if (callback) callback(JSON.parse(memoryStorage[this._dbName]).todos);
+    if (callback) callback([]);
   }
 }
 
