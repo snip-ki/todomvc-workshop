@@ -45,13 +45,29 @@ class Model {
 
     if (queryType === "function") {
       callback = query;
-      this.storage.findAll(callback);
-    } else if (queryType === "string" || queryType === "number") {
-      query = parseInt(query, 10);
-      this.storage.find({ id: query }, callback);
-    } else {
-      this.storage.find(query, callback);
+      query = undefined;
     }
+
+    const live = (todos) => {
+      if (callback) callback(todos.filter((todo) => !todo.deleted));
+    };
+
+    if (query === undefined) {
+      this.storage.findAll(live);
+    } else if (queryType === "string" || queryType === "number") {
+      this.storage.find({ id: parseInt(query, 10) }, live);
+    } else {
+      this.storage.find(query, live);
+    }
+  }
+
+  /**
+   * Returns all todos that were deleted and can still be restored
+   *
+   * @param {function} callback The callback to fire with the deleted todos
+   */
+  readDeleted(callback) {
+    this.storage.findAll((todos) => callback(todos.filter((todo) => todo.deleted)));
   }
 
   /**
@@ -67,13 +83,45 @@ class Model {
   }
 
   /**
-   * Removes a model from storage
+   * Moves a model to the trash, from where it can be restored
    *
    * @param {number} id The ID of the model to remove
    * @param {function} callback The callback to fire when the removal is complete.
    */
   remove(id, callback) {
+    this.update(id, { deleted: true }, callback);
+  }
+
+  /**
+   * Brings a deleted model back with its original id, title and completed state
+   *
+   * @param {number} id The ID of the model to restore
+   * @param {function} callback The callback to fire when the restore is complete.
+   */
+  restore(id, callback) {
+    this.update(id, { deleted: false }, callback);
+  }
+
+  /**
+   * Permanently removes a model from storage
+   *
+   * @param {number} id The ID of the model to purge
+   * @param {function} callback The callback to fire when the removal is complete.
+   */
+  purge(id, callback) {
     this.storage.remove(id, callback);
+  }
+
+  /**
+   * Permanently removes every deleted model from storage
+   *
+   * @param {function} callback The callback to fire when the trash is empty.
+   */
+  purgeDeleted(callback) {
+    this.readDeleted((todos) => {
+      for (let todo of todos) this.storage.remove(todo.id);
+      if (callback) callback();
+    });
   }
 
   /**
@@ -95,10 +143,16 @@ class Model {
       active: 0,
       completed: 0,
       total: 0,
+      deleted: 0,
     };
 
     this.storage.findAll((data) => {
       for (let todo of data) {
+        if (todo.deleted) {
+          stats.deleted++;
+          continue;
+        }
+
         if (todo.completed) stats.completed++;
         else stats.active++;
 

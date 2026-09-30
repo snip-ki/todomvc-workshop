@@ -26,6 +26,16 @@ const createTodoItem = ({ id, title, completed, checked }) => `
 </li>
 `;
 
+const createDeletedItem = ({ id, title, completed }) => `
+<li data-id="${id}" class="deleted${completed}">
+    <div class="view">
+        <label>${title}</label>
+        <button class="restore">Restore</button>
+        <button class="purge" aria-label="Delete permanently"></button>
+    </div>
+</li>
+`;
+
 class Template {
   /**
    * Creates an <li> HTML string and returns it for placement in your app.
@@ -53,6 +63,27 @@ class Template {
         title: escape(item.title),
         completed: item.completed ? "completed" : "",
         checked: item.completed ? "checked" : "",
+      });
+    });
+
+    return view;
+  }
+
+  /**
+   * Creates the <li> HTML string for every deleted todo, each with buttons to
+   * restore it or delete it permanently.
+   *
+   * @param {object[]} data The deleted todos
+   * @returns {string} HTML String of the <li> elements
+   */
+  showDeleted(data) {
+    let view = "";
+
+    data.reverse().forEach((item) => {
+      view += createDeletedItem({
+        id: item.id,
+        title: escape(item.title),
+        completed: item.completed ? " completed" : "",
       });
     });
 

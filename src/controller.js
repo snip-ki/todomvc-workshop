@@ -16,11 +16,14 @@ class Controller {
     this.view.bindCallback("itemToggle", (item) => this.toggleComplete(item.id, item.completed));
     this.view.bindCallback("removeCompleted", () => this.removeCompletedItems());
     this.view.bindCallback("toggleAll", (status) => this.toggleAll(status.completed));
+    this.view.bindCallback("itemRestore", (item) => this.restoreItem(item.id));
+    this.view.bindCallback("itemPurge", (item) => this.purgeItem(item.id));
+    this.view.bindCallback("emptyTrash", () => this.purgeDeleted());
   }
 
   /**
    * Load & Initialize the view
-   * @param {string}  '' | 'active' | 'completed'
+   * @param {string}  '' | 'active' | 'completed' | 'deleted'
    */
   setView(hash) {
     const route = hash.split("/")[1];
@@ -50,6 +53,13 @@ class Controller {
   }
 
   /**
+   * Renders all deleted tasks that can be restored
+   */
+  showDeleted() {
+    this.model.readDeleted((data) => this.view.render("showDeletedEntries", data));
+  }
+
+  /**
    * An event to fire whenever you want to add an item. Simply pass in the event
    * object and it'll handle the DOM insertion and saving of the new item.
    */
@@ -67,6 +77,8 @@ class Controller {
    */
   editItem(id) {
     this.model.read(id, (data) => {
+      if (!data.length) return;
+
       let title = data[0].title;
       this.view.render("editItem", { id, title });
     });
@@ -83,7 +95,7 @@ class Controller {
         this.view.render("editItemDone", { id, title });
       });
     } else {
-      this.removeItem(id);
+      this.purgeItem(id);
     }
   }
 
@@ -92,6 +104,8 @@ class Controller {
    */
   editItemCancel(id) {
     this.model.read(id, (data) => {
+      if (!data.length) return;
+
       const title = data[0].title;
       this.view.render("editItemDone", { id, title });
     });
@@ -99,7 +113,7 @@ class Controller {
 
   /**
    * Find the DOM element with given ID,
-   * Then remove it from DOM & Storage
+   * Then remove it from the DOM and move it to the trash
    */
   removeItem(id) {
     this.model.remove(id, () => this.view.render("removeItem", id));
@@ -107,7 +121,7 @@ class Controller {
   }
 
   /**
-   * Will remove all completed items from the DOM and storage.
+   * Will remove all completed items from the DOM and move them to the trash.
    */
   removeCompletedItems() {
     this.model.read({ completed: true }, (data) => {
@@ -115,6 +129,30 @@ class Controller {
     });
 
     this._filter();
+  }
+
+  /**
+   * Brings a deleted item back from the trash
+   */
+  restoreItem(id) {
+    this.model.restore(id);
+    this._filter(true);
+  }
+
+  /**
+   * Permanently removes an item from storage
+   */
+  purgeItem(id) {
+    this.model.purge(id, () => this.view.render("removeItem", id));
+    this._filter();
+  }
+
+  /**
+   * Permanently removes every item in the trash
+   */
+  purgeDeleted() {
+    this.model.purgeDeleted();
+    this._filter(true);
   }
 
   /**
@@ -159,7 +197,11 @@ class Controller {
       this.view.render("updateElementCount", todos.active);
       this.view.render("clearCompletedButton", { completed, visible });
       this.view.render("toggleAll", { checked });
-      this.view.render("contentBlockVisibility", { visible: todos.total > 0 });
+      this.view.render("contentBlockVisibility", { visible: todos.total + todos.deleted > 0 });
+      this.view.render("deletedView", {
+        active: this._activeRoute === "deleted",
+        deleted: todos.deleted,
+      });
     });
   }
 
@@ -176,7 +218,7 @@ class Controller {
 
     // If the last active route isn't "All", or we're switching routes, we
     // re-create the todo item elements, calling:
-    //   this.show[All|Active|Completed]()
+    //   this.show[All|Active|Completed|Deleted]()
     if (force || this._lastActiveRoute !== "All" || this._lastActiveRoute !== activeRoute)
       this[`show${activeRoute}`]();
 

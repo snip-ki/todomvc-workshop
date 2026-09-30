@@ -1,0 +1,74 @@
+/* Deleted view: todos in the trash that can be restored */
+
+.todo-list li.deleted label {
+  padding-right: 130px;
+  color: #949494;
+}
+
+.todo-list li.deleted.completed label {
+  text-decoration: line-through;
+}
+
+.todo-list li .restore {
+  position: absolute;
+  top: 0;
+  right: 55px;
+  bottom: 0;
+  height: 28px;
+  margin: auto 0;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #484848;
+  border: 1px solid #e6e6e6;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.todo-list li .restore:hover,
+.todo-list li .restore:focus {
+  border-color: #db7676;
+}
+
+.todo-list li .purge {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 10px;
+  bottom: 0;
+  width: 40px;
+  height: 40px;
+  margin: auto 0;
+  font-size: 30px;
+  color: #949494;
+  cursor: pointer;
+  transition: color 0.2s ease-out;
+}
+
+.todo-list li .purge:hover,
+.todo-list li .purge:focus {
+  color: #c18585;
+}
+
+.todo-list li .purge:after {
+  content: "×";
+  display: block;
+  height: 100%;
+  line-height: 1.1;
+}
+
+.todo-list li:hover .purge,
+.todo-list li .purge:focus {
+  display: block;
+}
+
+.empty-trash {
+  float: right;
+  position: relative;
+  line-height: 19px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.empty-trash:hover {
+  text-decoration: underline;
+}

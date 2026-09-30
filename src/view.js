@@ -77,8 +77,10 @@ export default class View {
     this.$todoList = qs(".todo-list");
     this.$todoItemCounter = qs(".todo-count");
     this.$clearCompleted = qs(".clear-completed");
+    this.$emptyTrash = qs(".empty-trash");
     this.$main = qs(".main");
     this.$footer = qs(".footer");
+    this.$toggleAllContainer = qs(".toggle-all-container");
     this.$toggleAllInput = qs(".toggle-all");
     this.$toggleAll = qs(".toggle-all-label");
     this.$newTodo = qs(".new-todo");
@@ -92,11 +94,21 @@ export default class View {
     this.$clearCompleted.style.display = visible ? "block" : "none";
   }
 
+  _deletedView(active, deletedCount) {
+    this.$toggleAllContainer.style.display = active ? "none" : "";
+    this.$emptyTrash.style.display = active && deletedCount > 0 ? "block" : "none";
+
+    if (active) this.$clearCompleted.style.display = "none";
+  }
+
   // eslint-disable-next-line complexity
   render(viewCmd, parameter) {
     switch (viewCmd) {
       case "showEntries":
         this.$todoList.innerHTML = this.template.show(parameter);
+        break;
+      case "showDeletedEntries":
+        this.$todoList.innerHTML = this.template.showDeleted(parameter);
         break;
       case "updateElementCount":
         this.$todoItemCounter.innerHTML = this.template.itemCounter(parameter);
@@ -134,6 +146,9 @@ export default class View {
           this.clearCompletedButton,
         );
         break;
+      case "deletedView":
+        this._deletedView(parameter.active, parameter.deleted);
+        break;
     }
   }
 
@@ -146,6 +161,9 @@ export default class View {
         break;
       case "removeCompleted":
         $on(this.$clearCompleted, "click", handler);
+        break;
+      case "emptyTrash":
+        $on(this.$emptyTrash, "click", handler);
         break;
       case "toggleAll":
         $on(this.$toggleAll, "click", () => {
@@ -160,6 +178,12 @@ export default class View {
         break;
       case "itemRemove":
         $delegate(this.$todoList, ".destroy", "click", (e) => handler({ id: _itemId(e.target) }));
+        break;
+      case "itemRestore":
+        $delegate(this.$todoList, ".restore", "click", (e) => handler({ id: _itemId(e.target) }));
+        break;
+      case "itemPurge":
+        $delegate(this.$todoList, ".purge", "click", (e) => handler({ id: _itemId(e.target) }));
         break;
       case "itemToggle":
         $delegate(this.$todoList, ".toggle", "click", (e) =>

@@ -3,7 +3,7 @@
 Canonical project skills live in [`skills/`](skills/).
 
 | Harness     | How it loads these skills                                                                                                     |
-|-------------|-------------------------------------------------------------------------------------------------------------------------------|
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Codex       | [`.agents/skills/`](skills/) at repo root ([OpenAI Codex docs](https://developers.openai.com/codex/skills))                   |
 | Pi          | Same [`.agents/skills/`](skills/) after you `/trust` the project ([Pi skills docs](https://pi.dev/docs/latest/skills))        |
 | Cursor      | Same [`.agents/skills/`](skills/) ([Cursor docs](https://cursor.com/docs/skills))                                             |
